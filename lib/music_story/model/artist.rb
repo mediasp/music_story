@@ -1,5 +1,5 @@
 module MusicStory
-  class Artist
+  class Model::Artist
     def initialize(attributes)
       attributes.each {|k,v| instance_variable_set(:"@#{k}", v)}
     end
@@ -17,12 +17,6 @@ module MusicStory
     
     attr_accessor :genre_relations # array of [relation_type, Genre]
     attr_accessor :associations    # array of [association_type, Artist]
-
-    ARTIST_GENRE_RELATIONS = {
-      1 => :main,
-      2 => :secondary,
-      3 => :influenced_by
-    }
     
     def main_genres
       @genre_relations.select {|type,genre| type == :main}.map {|type,genre| genre}
@@ -39,12 +33,6 @@ module MusicStory
     def all_genres
       @genre_relations.map {|type,genre| genre}
     end
-    
-    ASSOCIATION_TYPES = {
-      'A' => :similar,
-      'I' => :influenced_by,
-      'S' => :successor
-    }
     
     def similar_artists
       @associations.select {|type,artist| type == :similar}.map {|type,artist| artist}

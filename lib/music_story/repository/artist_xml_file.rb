@@ -9,18 +9,32 @@ module MusicStory
   #
   # Some elements mentioned in the PDF (such as collaboration, album, evenement etc)
   # haven't been seen so far in artist XML files so aren't handled.
-  class XMLParser
-    def self.each_in_file(filename, &block)
-      File.open(filename, 'r') do |file|
-        new(file).each(&block)
-      end
-    end
-    
+  class Repository::ArtistXMLFile
     def initialize(io)
       @reader = Nokogiri::XML::Reader.from_io(io)
     end
     
+    def self.new_with_open_file(filename, &block)
+      File.open(filename, 'r') do |file|
+        yield new(file)
+      end
+    end
+    
+    # Codes used in their XML file format:
+    ARTIST_GENRE_RELATIONS = {
+      1 => :main,
+      2 => :secondary,
+      3 => :influenced_by
+    }
+    
+    ASSOCIATION_TYPES = {
+      'A' => :similar,
+      'I' => :influenced_by,
+      'S' => :successor
+    }
+    
     include Enumerable
+    def get_all; self; end
     
     def each
       @reader.each do |node|
@@ -29,8 +43,8 @@ module MusicStory
         
         genre_relations = doc.xpath('//artiste/genres/genre').map do |node|
           [
-            Artist::ARTIST_GENRE_RELATIONS[node.attr('relation').to_i],
-            Genre.new(
+            ARTIST_GENRE_RELATIONS[node.attr('relation').to_i],
+            Model::Genre.new(
               :id   => node.attr('id').to_i,
               :name => node.inner_text.strip
             )
@@ -39,15 +53,15 @@ module MusicStory
         
         associations = doc.xpath('//artiste/associes/associe').map do |node|
           [
-            Artist::ASSOCIATION_TYPES[node.inner_text],
-            Artist.new({
+            ASSOCIATION_TYPES[node.inner_text],
+            Model::Artist.new({
               :id => node.attr('id_associe').to_i,
               :name => node.attr('nom_associe')
             })
           ]
         end
         
-        yield Artist.new({
+        yield Model::Artist.new({
           :id       => doc.xpath('//artiste').attr('id').value.to_i,
           :name     => doc.xpath('//artiste/nom').inner_text,
           :forename => unless_empty(doc.xpath('//artiste/prenom').inner_text),

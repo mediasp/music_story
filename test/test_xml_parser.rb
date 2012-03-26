@@ -7,14 +7,14 @@ describe "MusicStory::XMLParser" do
   it "should correctly parse artists in a test XML file" do
     filename = File.join(File.dirname(__FILE__), 'test-data.xml')
 
-    artists = []
-    MusicStory::XMLParser.each_in_file(filename) do |artist|
-      artists << artist
+    artists = nil
+    MusicStory::Repository::ArtistXMLFile.new_with_open_file(filename) do |repo|
+      artists = repo.get_all.to_a
     end
 
     assert_equal 1, artists.length
     artist = artists.first
-    assert_kind_of MusicStory::Artist, artist
+    assert_kind_of MusicStory::Model::Artist, artist
 
     assert_equal 42, artist.id
     assert_equal 'Serge Gainsbourg', artist.name
@@ -90,13 +90,13 @@ Début 2010, le film Gainsbourg (Vie héroïque) réalisé par le dessinateur Jo
 END
     assert_equal bio.strip, artist.plain_text_bio
 
-    artist.all_genres.each {|g| assert_kind_of MusicStory::Genre, g}
-    artist.genre_relations.each {|t,g| assert_kind_of Symbol, t; assert_kind_of MusicStory::Genre, g}
+    artist.all_genres.each {|g| assert_kind_of MusicStory::Model::Genre, g}
+    artist.genre_relations.each {|t,g| assert_kind_of Symbol, t; assert_kind_of MusicStory::Model::Genre, g}
     assert_equal [5, 24, 1, 25, 21, 26, 27, 28, 29, 42, 71, 151, 72, 216, 99], artist.all_genres.map(&:id)
     assert_equal ["Pop", "Chanson française", "Rock", "Reggae", "Jazz", "Funk", "Rap", "Musique classique", "Rive gauche", "Yéyé", "Pop française", "Musiques du monde", "Rock français", "Comédie Musicale", "Chanson engagée"], artist.all_genres.map(&:name)
     assert_equal [:secondary, :main, :influenced_by, :secondary, :secondary, :influenced_by, :influenced_by, :influenced_by, :main, :influenced_by, :main, :influenced_by, :main, :secondary, :secondary], artist.genre_relations.map {|t,g| t}
 
-    artist.all_associated_artists.each {|a| assert_kind_of MusicStory::Artist, a}
+    artist.all_associated_artists.each {|a| assert_kind_of MusicStory::Model::Artist, a}
     assert_equal [176, 806, 746, 1777, 1422, 1218, 747, 1663, 555, 100110], artist.all_associated_artists.map(&:id)
     assert_equal ["Boris Vian", "Alain Bashung", "Fréhel", "Arthur H", "Daniel Darc", "Benjamin Biolay", "Léo Ferré", "Katerine", "Little Richard", "The Moody Blues"], artist.all_associated_artists.map(&:name)
     assert_equal [:influenced_by, :successor, :influenced_by, :successor, :successor, :successor, :similar, :similar, :similar, :similar], artist.associations.map {|t,a| t}
