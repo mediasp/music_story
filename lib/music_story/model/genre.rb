@@ -1,10 +1,7 @@
 module MusicStory
-  class Model::Genre
-    def initialize(attributes)
-      attributes.each {|k,v| instance_variable_set(:"@#{k}", v)}
-    end
-  
-    attr_accessor :id, :name
+  class Model::Genre < ThinModels::Struct
+    identity_attribute :id # MusicStory identifier
+    attribute :name
     alias :to_s :name
   end
 end
