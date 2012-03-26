@@ -41,40 +41,42 @@ module MusicStory
         next unless node.name == 'artiste' && node.node_type == Nokogiri::XML::Reader::TYPE_ELEMENT
         doc = Nokogiri::XML(node.outer_xml)
         
-        genre_relations = doc.xpath('//artiste/genres/genre').map do |node|
-          [
-            ARTIST_GENRE_RELATIONS[node.attr('relation').to_i],
-            Model::Genre.new(
-              :id   => node.attr('id').to_i,
-              :name => node.inner_text.strip
-            )
-          ]
+        genres = Hash.new {|h,k| h[k]=[]}
+        doc.xpath('//artiste/genres/genre').map do |node|
+          genre = Model::Genre.new(
+            :id   => node.attr('id').to_i,
+            :name => node.inner_text.strip
+          )
+          genres[ARTIST_GENRE_RELATIONS[node.attr('relation').to_i]] << genre
         end
         
-        associations = doc.xpath('//artiste/associes/associe').map do |node|
-          [
-            ASSOCIATION_TYPES[node.inner_text],
-            Model::Artist.new({
-              :id => node.attr('id_associe').to_i,
-              :name => node.attr('nom_associe')
-            })
-          ]
+        associations = Hash.new {|h,k| h[k]=[]}
+        doc.xpath('//artiste/associes/associe').map do |node|
+          artist = Model::Artist.new({
+            :id => node.attr('id_associe').to_i,
+            :name => node.attr('nom_associe')
+          })
+          associations[ASSOCIATION_TYPES[node.inner_text]] << artist
         end
         
         yield Model::Artist.new({
-          :id       => doc.xpath('//artiste').attr('id').value.to_i,
-          :name     => doc.xpath('//artiste/nom').inner_text,
-          :forename => unless_empty(doc.xpath('//artiste/prenom').inner_text),
+          :id        => doc.xpath('//artiste').attr('id').value.to_i,
+          :name      => doc.xpath('//artiste/nom').inner_text,
+          :forename  => unless_empty(doc.xpath('//artiste/prenom').inner_text),
           :real_name => unless_empty(doc.xpath('//artiste/nom_reel').inner_text),
-          :role     => unless_empty(doc.xpath('//artiste/role').inner_text),
-          :type     => unless_empty(doc.xpath('//artiste/type').inner_text),
-          :country  => unless_empty(doc.xpath('//artiste/pays').inner_text),
+          :role      => unless_empty(doc.xpath('//artiste/role').inner_text),
+          :type      => unless_empty(doc.xpath('//artiste/type').inner_text),
+          :country   => unless_empty(doc.xpath('//artiste/pays').inner_text),
           # not sure what the appropriate translation for resume vs texte_bio is here,
           # but in data seen so far they are both the same and both HTML not plain text:
-          :summary_html => unless_empty(doc.xpath('//artiste/resume').inner_text),
-          :bio_html => unless_empty(doc.xpath('//artiste/texte_bio').inner_text),
-          :genre_relations => genre_relations,
-          :associations => associations
+          :summary_html          => unless_empty(doc.xpath('//artiste/resume').inner_text),
+          :bio_html              => unless_empty(doc.xpath('//artiste/texte_bio').inner_text),
+          :main_genres           => genres[:main],
+          :secondary_genres      => genres[:secondary],
+          :influenced_by_genres  => genres[:influenced_by],
+          :similar_artists       => associations[:similar],
+          :influenced_by_artists => associations[:influenced_by],
+          :successor_artists     => associations[:successor]
         })
       end
     end

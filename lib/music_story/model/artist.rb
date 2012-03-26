@@ -16,32 +16,15 @@ module MusicStory
     attribute :summary_html
     attribute :bio_html
     
-    attribute :genre_relations # array of [relation_type, Model::Genre]
-    attribute :associations    # array of [association_type, Model::Artist]
-    
-    def main_genres
-      genre_relations.select {|type,genre| type == :main}.map {|type,genre| genre}
-    end
-    
-    def secondary_genres
-      genre_relations.select {|type,genre| type == :secondary}.map {|type,genre| genre}
-    end
-    
-    def influenced_by_genres
-      genre_relations.select {|type,genre| type == :influenced_by}.map {|type,genre| genre}
-    end
-    
+    attribute :main_genres
+    attribute :secondary_genres
+    attribute :influenced_by_genres
     def all_genres
-      genre_relations.map {|type,genre| genre}
+      (main_genres + secondary_genres + influenced_by_genres).uniq
     end
     
-    def similar_artists
-      associations.select {|type,artist| type == :similar}.map {|type,artist| artist}
-    end
-    
-    def influenced_by_artists
-      associations.select {|type,artist| type == :influenced_by}.map {|type,artist| artist}
-    end
+    attribute :similar_artists
+    attribute :influenced_by_artists
     
     # 'successor' was MusicStory's English translation, appears to mean 'is succeeded by'
     # or perhaps more accurately 'influenced' / 'was followed by'. From their example sounds
@@ -52,22 +35,20 @@ module MusicStory
     # The relation means that Micheal Jackson is a successor of Diana Ross.
     # The reverse isn't not always true, Michael Jackson will not necessarily be mentioned
     # as influenced by Diana Ross"
-    def successor_artists
-      associations.select {|type,artist| type == :successor}.map {|type,artist| artist}
-    end
+    attribute :successor_artists
     
     def all_associated_artists
-      associations.map {|type,artist| artist}
+      (similar_artists + influenced_by_artists + successor_artists).uniq
     end
     
     # The bio html converted to plain text, see HTMLToText
     def plain_text_bio
-      bio_html && HTMLToText.convert(bio_html)
+      bio_html && Utils::HTMLToText.convert(bio_html)
     end
 
     # The summary html converted to plain text, see HTMLToText
     def plain_text_summary
-      summary_html && HTMLToText.convert(summary_html)
+      summary_html && Utils::HTMLToText.convert(summary_html)
     end
   end
 end

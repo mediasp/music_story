@@ -3,7 +3,7 @@ module MusicStory
   # stripping all other tags.
   # May want to add support for other things like <p> into \n\n if they
   # crop up; MusicStory only seems to use <br> though
-  class HTMLToText < Nokogiri::XML::SAX::Document
+  class Utils::HTMLToText < Nokogiri::XML::SAX::Document
     def self.convert(html)
       doc = new
       Nokogiri::HTML::SAX::Parser.new(doc).parse(html)
