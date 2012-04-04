@@ -16,6 +16,14 @@ def choice_prompt(message, choices=['y', 'n'])
   answer
 end
 
+def upload_file(filename)
+  CI::File.new
+  ci_file.mime_type = 'image/jpeg'
+  ci_file.content = file.read
+  ci_file.store!
+  ci_file
+end
+
 # FIXME use optparse, lol
 def has_switch(switch_name)
   ! @switches.select {|a| a.index(switch_name) == 2 }.empty?
@@ -27,6 +35,7 @@ end
 
 require 'rubygems'
 require 'pp'
+require 'ci_api'
 require 'music_story'
 xml_file = '/home/nick/raid/20120402/music-story-data-archambault-10GH31-2012-04-02-45-01.xml'
 
