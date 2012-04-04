@@ -164,7 +164,7 @@ end
     :base_id => msp_artist[:id],
     :updated_at => now_utc,
     :created_at => now_utc,
-    :body => artist_text_body,
+    :body => artist_text_body.gsub("\\",''), # Remove double escaped vals
     #:source_property_type => artist_text_type.to_s,
     :source_property_id   => ms_artist.id,
   }.merge(CONSTANT_DESCRIPTION_VALUES)
