@@ -26,6 +26,17 @@ def upload_file(filename)
   end
 end
 
+
+def image_metadata_params ci_file_id
+  {
+    :created_at => now_utc,
+    :updated_at => now_utc,
+    :type       => 'MSP::File::Image',
+    :ci_file_id => ci_file_id,
+    :mime_type => 'image/jpeg'
+  }
+end
+
 # FIXME use optparse, lol
 def has_switch(switch_name)
   ! @switches.select {|a| a.index(switch_name) == 2 }.empty?
@@ -138,7 +149,9 @@ CONSTANT_DESCRIPTION_VALUES = {
   :lang_code => "fr",
   :credits   => "Music Story",
   :use       => true,
-  :source_id => music_story_licensor[:id]
+  :source_id => music_story_licensor[:id],
+  :source_property_type => 'biography'
+
 }
 
 $stderr.puts("Adding description for artist id:#{selected[:id]} - #{selected[:title]}")
@@ -152,14 +165,14 @@ if artist_text_body.nil?
   exit 1
 end
 
-now_utc = Time.now.utc
+def now_utc ; Time.now.utc ; end
 
 description_values = {
   :base_id => selected[:id],
   :updated_at => now_utc,
   :created_at => now_utc,
   :body => artist_text_body,
-  :source_property_type => artist_text_type.to_s,
+  #:source_property_type => artist_text_type.to_s,
   :source_property_id   => ms_artist.id,
 }.merge(CONSTANT_DESCRIPTION_VALUES)
 
@@ -172,20 +185,40 @@ if choice_prompt("Confirm insert?") == 'n'
 end
 
 img_dir = switch_value("img-dir")
-if ! ms_artist.image_filename.nil?
-  image_file = File.join(img_dir, ms_artist.image_filename)
 
-  if ! File.exists?(image_file)
-    $stderr.puts("no image file called: #{image_file}")
-  else
-    $stderr.puts("using image file #{image_file}")
-    ci_file = upload_file(image_file)
-    $stderr.puts("uploaded to ci as #{ci_file.inspect}")
+filter_params = {}.tap do |_h|
+  [:base_id , :source_property_type, :lang_code, :source_id].map do |key|
+    _h[key] = description_values[key]
+
   end
+end
+if  msp_db[:descriptions].filter(filter_params).count > 0
+  $stderr.puts "Overriding existing description!"
+  msp_db[:descriptions].filter(filter_params).update(description_values)
 else
-  $stderr.puts("no image define for #{ms_artist.name}")
+  msp_db[:descriptions].insert(description_values)
 end
 
+if selected[:primary_image_id].nil?
+  if ! ms_artist.image_filename.nil?
+    image_file = File.join(File.expand_path(img_dir), ms_artist.image_filename)
 
+    if ! File.exists?(image_file)
+      $stderr.puts("no image file called: #{image_file}")
+    else
+      $stderr.puts("using image file #{image_file}")
+      ci_file = upload_file(image_file)
+      $stderr.puts("uploaded to ci as #{ci_file.inspect}")
 
-msp_db[:descriptions].insert(description_values)
+      $stderr.puts("updating image metadata in msp_db")
+      msp_file_p = image_metadata_params(ci_file.id)
+      msp_db[:files].insert(msp_file_p)
+
+    end
+  else
+    $stderr.puts("no image define for #{ms_artist.name}")
+  end
+else
+
+  $stderr.puts "Image already exists!"
+end
