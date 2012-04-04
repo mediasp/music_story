@@ -129,50 +129,49 @@ end
 
   $stderr.puts("Adding description for artist id:#{msp_artist[:id]} - #{msp_artist[:title]}")
 
+  def now_utc ; Time.now.utc ; end
+  img_dir = switch_value("img-dir")
+
+
   artist_text_type, artist_text_body = [:plain_text_bio, :plain_text_summary].
   map {|prop| [prop, ms_artist.send(prop)] }.
   find {|prop, text| ! text.nil? }
 
   if artist_text_body.nil?
     $stderr.puts("No description for music story artist, sad times")
-    next
-  end
-
-  def now_utc ; Time.now.utc ; end
-
-  description_values = {
-    :base_id => msp_artist[:id],
-    :updated_at => now_utc,
-    :created_at => now_utc,
-    :body => artist_text_body.gsub("\\",''), # Remove double escaped vals
-    #:source_property_type => artist_text_type.to_s,
-    :source_property_id   => ms_artist.id,
-  }.merge(CONSTANT_DESCRIPTION_VALUES)
-
-  $stderr.puts("Confirm insert:")
-  pp description_values
-
-  if choice_prompt("Confirm insert?") == 'n'
-    $stderr.puts("quitting on user instruction")
-    next
-  end
-
-  img_dir = switch_value("img-dir")
-
-  filter_params = {}.tap do |_h|
-    [:base_id , :source_property_type, :lang_code, :source_id].map do |key|
-      _h[key] = description_values[key]
-
-    end
-  end
-  existing_ds = msp_db[:descriptions].filter(filter_params)
-  if existing_ds.count > 0
-    $stderr.puts "Overriding existing description!"
-    @operation_logfile.puts("updating existing descriptions: #{existing_ds.all.map {|d| d[:id] }}")
-    msp_db[:descriptions].filter(filter_params).update(description_values)
   else
-    inserted = msp_db[:descriptions].insert(description_values)
-    @operation_logfile.puts("inserting new description: #{inserted}")
+    description_values = {
+      :base_id => msp_artist[:id],
+      :updated_at => now_utc,
+      :created_at => now_utc,
+      :body => artist_text_body.gsub("\\",''), # Remove double escaped vals
+      #:source_property_type => artist_text_type.to_s,
+      :source_property_id   => ms_artist.id,
+    }.merge(CONSTANT_DESCRIPTION_VALUES)
+
+    $stderr.puts("Confirm insert:")
+    pp description_values
+
+    if choice_prompt("Confirm insert?") == 'n'
+      $stderr.puts("quitting on user instruction")
+      next
+    end
+
+    filter_params = {}.tap do |_h|
+      [:base_id , :source_property_type, :lang_code, :source_id].map do |key|
+        _h[key] = description_values[key]
+      end
+    end
+
+    existing_ds = msp_db[:descriptions].filter(filter_params)
+    if existing_ds.count > 0
+      $stderr.puts "Overriding existing description!"
+      @operation_logfile.puts("updating existing descriptions: #{existing_ds.all.map {|d| d[:id] }}")
+      msp_db[:descriptions].filter(filter_params).update(description_values)
+    else
+      inserted = msp_db[:descriptions].insert(description_values)
+      @operation_logfile.puts("inserting new description: #{inserted}")
+    end
   end
 
   if ! ms_artist.image_filename.nil?
