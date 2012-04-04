@@ -2,7 +2,8 @@
 @switches, @args = ARGV.partition {|arg| /^\-\-/.match(arg) }
 
 def switch_value(switch_name)
-  @switches.select {|a| a.index(switch_name) == 2 }.first.split("=").last
+  found = @switches.select {|a| a.index(switch_name) == 2 }.first
+  found && found.split("=").last
 end
 
 
@@ -12,7 +13,7 @@ def has_switch(switch_name)
 end
 
 def xml_files
-  Dir[@xml_dir + "/*.xml"]
+  [*switch_value("xml-file") || Dir[@xml_dir + "/*.xml"]]
 end
 
 require 'rubygems'
@@ -45,7 +46,7 @@ def import_db
 end
 
 if ! File.exists?(db_file)
-  $sdterr.puts("importing db to #{db_file}")
+  $stderr.puts("importing db to #{db_file}")
   import_db
 elsif has_switch("nuke")
   $stderr.puts("nuking #{db_file}")
@@ -53,5 +54,16 @@ elsif has_switch("nuke")
   import_db
 end
 
+msp_db = Sequel.connect(switch_value("msp-database"))
 
-puts @sequel.artist_repo.get_all
+title = @args.first
+
+$stderr.puts("looking for #{title}")
+
+found = msp_db[:artists].filter(:title => /#{title}/i).all
+
+found.each do |artist_blob|
+  $stderr.puts("  #{artist_blob.inspect}")
+end
+
+
