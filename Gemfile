@@ -1,2 +1,3 @@
-source(ENV['BUNDLER_OVERRIDE_SOURCE'] || :rubygems)
+source :rubygems
+(extra = ENV['BUNDLER_OVERRIDE_SOURCE']) && source(extra)
 gemspec
