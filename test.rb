@@ -58,7 +58,7 @@ CI::MediaFileServer.configure(
   :logger       => nil,
   :open_timeout => 60,
   :read_timeout => 60
-  )
+)
 
 
 require 'pp'
@@ -121,104 +121,107 @@ if music_story_licensor.nil?
   exit 1
 end
 
-title = @args.first
+@sequel.artist_repo.get_all.each do |ms_artist|
 
-$stderr.puts("looking for #{title}")
+  title = ms_artist.name
 
-found = msp_db[:artists].filter(:title => /#{title}/i).all
+  $stderr.puts("looking for #{title}")
 
-selected = found.find do |artist_blob|
-  $stderr.puts("  #{artist_blob.inspect}")
-  choice_prompt("Select msp artist?") == 'y'
-end
+  found = msp_db[:artists].filter(:title => /#{title}/i).all
 
-if ! selected
-  stderr.puts("no artist selected.")
-  exit 1
-end
+  selected = found.find do |artist_blob|
+    $stderr.puts("  #{artist_blob.inspect}")
+    choice_prompt("Select msp artist?") == 'y'
+  end
 
-ms_artist = @sequel.artist_repo.get_by_property(:name, title)
-if ms_artist
-  $stderr.puts("found #{ms_artist.name} in music story")
-else
-  $stderr.puts("no artist #{title} found in music story")
-  exit 1
-end
+  if ! selected
+    stderr.puts("no artist selected.")
+    exit 1
+  end
 
-CONSTANT_DESCRIPTION_VALUES = {
-  :lang_code => "fr",
-  :credits   => "Music Story",
-  :use       => true,
-  :source_id => music_story_licensor[:id],
-  :source_property_type => 'biography'
 
-}
+  if ms_artist
+    $stderr.puts("found #{ms_artist.name} in music story")
+  else
+    $stderr.puts("no artist #{title} found in music story")
+    exit 1
+  end
 
-$stderr.puts("Adding description for artist id:#{selected[:id]} - #{selected[:title]}")
+  CONSTANT_DESCRIPTION_VALUES = {
+    :lang_code => "fr",
+    :credits   => "Music Story",
+    :use       => true,
+    :source_id => music_story_licensor[:id],
+    :source_property_type => 'biography'
 
-artist_text_type, artist_text_body = [:plain_text_bio, :plain_text_summary].
+  }
+
+  $stderr.puts("Adding description for artist id:#{selected[:id]} - #{selected[:title]}")
+
+  artist_text_type, artist_text_body = [:plain_text_bio, :plain_text_summary].
   map {|prop| [prop, ms_artist.send(prop)] }.
   find {|prop, text| ! text.nil? }
 
-if artist_text_body.nil?
-  $stderr.puts("No description for music story artist, sad times")
-  exit 1
-end
-
-def now_utc ; Time.now.utc ; end
-
-description_values = {
-  :base_id => selected[:id],
-  :updated_at => now_utc,
-  :created_at => now_utc,
-  :body => artist_text_body,
-  #:source_property_type => artist_text_type.to_s,
-  :source_property_id   => ms_artist.id,
-}.merge(CONSTANT_DESCRIPTION_VALUES)
-
-$stderr.puts("Confirm insert:")
-pp description_values
-
-if choice_prompt("Confirm insert?") == 'n'
-  $stderr.puts("quitting on user instruction")
-  exit 1
-end
-
-img_dir = switch_value("img-dir")
-
-filter_params = {}.tap do |_h|
-  [:base_id , :source_property_type, :lang_code, :source_id].map do |key|
-    _h[key] = description_values[key]
-
+  if artist_text_body.nil?
+    $stderr.puts("No description for music story artist, sad times")
+    exit 1
   end
-end
-if  msp_db[:descriptions].filter(filter_params).count > 0
-  $stderr.puts "Overriding existing description!"
-  msp_db[:descriptions].filter(filter_params).update(description_values)
-else
-  msp_db[:descriptions].insert(description_values)
-end
 
-if selected[:primary_image_id].nil?
-  if ! ms_artist.image_filename.nil?
-    image_file = File.join(File.expand_path(img_dir), ms_artist.image_filename)
+  def now_utc ; Time.now.utc ; end
 
-    if ! File.exists?(image_file)
-      $stderr.puts("no image file called: #{image_file}")
-    else
-      $stderr.puts("using image file #{image_file}")
-      ci_file = upload_file(image_file)
-      $stderr.puts("uploaded to ci as #{ci_file.inspect}")
+  description_values = {
+    :base_id => selected[:id],
+    :updated_at => now_utc,
+    :created_at => now_utc,
+    :body => artist_text_body,
+    #:source_property_type => artist_text_type.to_s,
+    :source_property_id   => ms_artist.id,
+  }.merge(CONSTANT_DESCRIPTION_VALUES)
 
-      $stderr.puts("updating image metadata in msp_db")
-      msp_file_p = image_metadata_params(ci_file.id)
-      msp_db[:files].insert(msp_file_p)
+  $stderr.puts("Confirm insert:")
+  pp description_values
+
+  if choice_prompt("Confirm insert?") == 'n'
+    $stderr.puts("quitting on user instruction")
+    exit 1
+  end
+
+  img_dir = switch_value("img-dir")
+
+  filter_params = {}.tap do |_h|
+    [:base_id , :source_property_type, :lang_code, :source_id].map do |key|
+      _h[key] = description_values[key]
 
     end
-  else
-    $stderr.puts("no image define for #{ms_artist.name}")
   end
-else
+  if  msp_db[:descriptions].filter(filter_params).count > 0
+    $stderr.puts "Overriding existing description!"
+    msp_db[:descriptions].filter(filter_params).update(description_values)
+  else
+    msp_db[:descriptions].insert(description_values)
+  end
 
-  $stderr.puts "Image already exists!"
+  if selected[:primary_image_id].nil?
+    if ! ms_artist.image_filename.nil?
+      image_file = File.join(File.expand_path(img_dir), ms_artist.image_filename)
+
+      if ! File.exists?(image_file)
+        $stderr.puts("no image file called: #{image_file}")
+      else
+        $stderr.puts("using image file #{image_file}")
+        ci_file = upload_file(image_file)
+        $stderr.puts("uploaded to ci as #{ci_file.inspect}")
+
+        $stderr.puts("updating image metadata in msp_db")
+        msp_file_p = image_metadata_params(ci_file.id)
+        msp_db[:files].insert(msp_file_p)
+
+      end
+    else
+      $stderr.puts("no image define for #{ms_artist.name}")
+    end
+  else
+
+    $stderr.puts "Image already exists!"
+  end
 end
