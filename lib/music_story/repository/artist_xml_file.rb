@@ -13,34 +13,34 @@ module MusicStory
     def initialize(io)
       @reader = Nokogiri::XML::Reader.from_io(io)
     end
-    
+
     def self.new_with_open_file(filename, &block)
       File.open(filename, 'r') do |file|
         yield new(file)
       end
     end
-    
+
     # Codes used in their XML file format:
     ARTIST_GENRE_RELATIONS = {
       1 => :main,
       2 => :secondary,
       3 => :influenced_by
     }
-    
+
     ASSOCIATION_TYPES = {
       'A' => :similar,
       'I' => :influenced_by,
       'S' => :successor
     }
-    
+
     include Enumerable
     def get_all; self; end
-    
+
     def each
       @reader.each do |node|
         next unless node.name == 'artiste' && node.node_type == Nokogiri::XML::Reader::TYPE_ELEMENT
         doc = Nokogiri::XML(node.outer_xml)
-        
+
         genres = Hash.new {|h,k| h[k]=[]}
         doc.xpath('//artiste/genres/genre').map do |node|
           genre = Model::Genre.new(
@@ -49,7 +49,7 @@ module MusicStory
           )
           genres[ARTIST_GENRE_RELATIONS[node.attr('relation').to_i]] << genre
         end
-        
+
         associations = Hash.new {|h,k| h[k]=[]}
         doc.xpath('//artiste/associes/associe').map do |node|
           artist = Model::Artist.new({
@@ -58,7 +58,7 @@ module MusicStory
           })
           associations[ASSOCIATION_TYPES[node.inner_text]] << artist
         end
-        
+
         yield Model::Artist.new({
           :id        => doc.xpath('//artiste').attr('id').value.to_i,
           :name      => doc.xpath('//artiste/nom').inner_text,
@@ -70,6 +70,8 @@ module MusicStory
           # not sure what the appropriate translation for resume vs texte_bio is here,
           # but in data seen so far they are both the same and both HTML not plain text:
           :summary_html          => unless_empty(doc.xpath('//artiste/resume').inner_text),
+          :image_filename        => unless_empty(doc.xpath('//artiste/image').inner_text),
+
           :bio_html              => unless_empty(doc.xpath('//artiste/texte_bio').inner_text),
           :main_genres           => genres[:main],
           :secondary_genres      => genres[:secondary],

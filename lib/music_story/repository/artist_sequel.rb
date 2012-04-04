@@ -9,6 +9,7 @@ module MusicStory
     map_column :type
     map_column :country
     map_column :summary_html
+    map_column :image_filename
     map_column :bio_html
 
     [:similar, :influenced_by, :successor].each do |rel|
@@ -20,7 +21,7 @@ module MusicStory
         :right_key   => :to_artist_id,
         :writeable   => true
     end
-    
+
     [:main, :secondary, :influenced_by].each do |rel|
       map_many_to_many :"#{rel}_genres",
         :model_class => Model::Genre,

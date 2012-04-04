@@ -7,6 +7,7 @@ module MusicStory
     attribute :role
     attribute :type
     attribute :country     # 'pays' at source
+    attribute :image_filename
 
     # Called 'resume' and 'texte_bio' in the MusicStory XML.
     # Not sure what the appropriate translation for resume vs texte_bio is here,
@@ -15,17 +16,18 @@ module MusicStory
     # text. (But see plain_text_{bio,summary})
     attribute :summary_html
     attribute :bio_html
-    
+
     attribute :main_genres
     attribute :secondary_genres
     attribute :influenced_by_genres
+
     def all_genres
       (main_genres + secondary_genres + influenced_by_genres).uniq
     end
-    
+
     attribute :similar_artists
     attribute :influenced_by_artists
-    
+
     # 'successor' was MusicStory's English translation, appears to mean 'is succeeded by'
     # or perhaps more accurately 'influenced' / 'was followed by'. From their example sounds
     # like it's similar semantics to 'influenced by' but in the opposite direction:
@@ -36,11 +38,11 @@ module MusicStory
     # The reverse isn't not always true, Michael Jackson will not necessarily be mentioned
     # as influenced by Diana Ross"
     attribute :successor_artists
-    
+
     def all_associated_artists
       (similar_artists + influenced_by_artists + successor_artists).uniq
     end
-    
+
     # The bio html converted to plain text, see HTMLToText
     def plain_text_bio
       bio_html && Utils::HTMLToText.convert(bio_html)
