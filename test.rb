@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 @switches, @args = ARGV.partition {|arg| /^\-\-/.match(arg) }
+@operation_logfile = File.open('mung_music_story.log', 'a')
+
+require 'rubygems'
+require 'json'
+require 'pp'
+require 'music_story'
+require 'shellwords'
 
 def switch_value(switch_name)
   found = @switches.select {|a| a.index(switch_name) == 2 }.first
@@ -15,13 +22,14 @@ def choice_prompt(message, choices=['y', 'n'])
 
   answer
 end
+@msp_dir = switch_value('msp-dir') || File.expand_path('~/Projects/msp')
+@script_path = switch_value('upload-script') || "../msp-ops-scripts/ingestion/upload_one_off_image.rb"
 
 def set_artist_image(params)
-  Dir.chdir(File.expand_path('~/Projects/msp')) do
-    cmd = "bin/msp script ../msp-ops-scripts/ingestion/upload_one_off_image.rb '#{params.to_json}'"
-    $stderr.puts cmd
-    $stderr.puts `#{cmd}`
-  end
+  @operation_logfile.puts("Calling upload script with #{params.inspect}")
+  cmd = "./msp-script.sh #@msp_dir #@script_path #{Shellwords.shellescape(params.to_json)}"
+  $stderr.puts cmd
+  $stderr.puts `#{cmd}`
 end
 
 # FIXME use optparse, lol
@@ -33,11 +41,6 @@ def xml_files
 [*switch_value("xml-file") || Dir[@xml_dir + "/*.xml"]]
 end
 
-require 'rubygems'
-
-
-require 'pp'
-require 'music_story'
 xml_file = File.expand_path('~/raid/20120402/music-story-data-archambault-10GH31-2012-04-02-45-01.xml')
 
 @xml_dir = File.expand_path '~/raid/20120402'
@@ -95,6 +98,8 @@ if music_story_licensor.nil?
   exit 1
 end
 
+@operation_logfile.puts("Beginning new mung at #{Time.now.to_s}")
+
 @sequel.artist_repo.get_all.each do |ms_artist|
 
   title = ms_artist.name
@@ -120,7 +125,6 @@ end
     :use       => true,
     :source_id => music_story_licensor[:id],
     :source_property_type => 'biography'
-
   }
 
   $stderr.puts("Adding description for artist id:#{msp_artist[:id]} - #{msp_artist[:title]}")
@@ -161,11 +165,14 @@ end
 
     end
   end
-  if  msp_db[:descriptions].filter(filter_params).count > 0
+  existing_ds = msp_db[:descriptions].filter(filter_params)
+  if existing_ds.count > 0
     $stderr.puts "Overriding existing description!"
+    @operation_logfile.puts("updating existing descriptions: #{existing_ds.all.map {|d| d[:id] }}")
     msp_db[:descriptions].filter(filter_params).update(description_values)
   else
-    msp_db[:descriptions].insert(description_values)
+    inserted = msp_db[:descriptions].insert(description_values)
+    @operation_logfile.puts("inserting new description: #{inserted}")
   end
 
   if ! ms_artist.image_filename.nil?
@@ -186,9 +193,9 @@ end
         "image_filename" => image_file,
         "artist_id"      => msp_artist[:id]
       }
-      $stderr.puts "Replacing artist image #{msp_artist[:primary_image_id]} of artist: #{msp_artist[:id]}"
-      set_artist_image(image_params)
 
+      @operation_logfile.puts("replacing artist image #{msp_artist[:primary_image_id]} of artist: #{msp_artist[:id]}")
+      set_artist_image(image_params)
     end
   else
     $stderr.puts("no image define for #{ms_artist.name}")
