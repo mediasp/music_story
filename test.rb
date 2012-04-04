@@ -17,11 +17,13 @@ def choice_prompt(message, choices=['y', 'n'])
 end
 
 def upload_file(filename)
-  CI::File.new
-  ci_file.mime_type = 'image/jpeg'
-  ci_file.content = file.read
-  ci_file.store!
-  ci_file
+  File.open(filename, 'r') do |file|
+    ci_file = CI::File.new
+    ci_file.mime_type = 'image/jpeg'
+    ci_file.content = file.read
+    ci_file.store!
+    ci_file
+  end
 end
 
 # FIXME use optparse, lol
@@ -176,6 +178,8 @@ if ! ms_artist.image_filename.nil?
     $stderr.puts("no image file called: #{image_file}")
   else
     $stderr.puts("using image file #{image_file}")
+    ci_file = upload_file(image_file)
+    $stderr.puts("uploaded to ci as #{ci_file.inspect}")
   end
 else
   $stderr.puts("no image define for #{ms_artist.name}")
