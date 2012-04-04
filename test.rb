@@ -34,8 +34,21 @@ def xml_files
 end
 
 require 'rubygems'
+
+require 'ci-api'
+CI::MediaFileServer.configure(
+  'api@mediaserviceprovider.com', 'chom77gup',
+  :host         => 'msp.api.cissme.com',
+  :port         => 80,
+  :protocol     => :http,
+  :base_path    => '/',
+  :logger       => nil,
+  :open_timeout => 60,
+  :read_timeout => 60
+  )
+
+
 require 'pp'
-require 'ci_api'
 require 'music_story'
 xml_file = '/home/nick/raid/20120402/music-story-data-archambault-10GH31-2012-04-02-45-01.xml'
 
@@ -118,7 +131,6 @@ else
   exit 1
 end
 
-
 CONSTANT_DESCRIPTION_VALUES = {
   :lang_code => "fr",
   :credits   => "Music Story",
@@ -155,5 +167,20 @@ if choice_prompt("Confirm insert?") == 'n'
   $stderr.puts("quitting on user instruction")
   exit 1
 end
+
+img_dir = switch_value("img-dir")
+if ! ms_artist.image_filename.nil?
+  image_file = File.join(img_dir, ms_artist.image_filename)
+
+  if ! File.exists?(image_file)
+    $stderr.puts("no image file called: #{image_file}")
+  else
+    $stderr.puts("using image file #{image_file}")
+  end
+else
+  $stderr.puts("no image define for #{ms_artist.name}")
+end
+
+
 
 msp_db[:descriptions].insert(description_values)
