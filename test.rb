@@ -100,7 +100,15 @@ end
 
 @operation_logfile.puts("Beginning new mung at #{Time.now.to_s}")
 
-@sequel.artist_repo.get_all.each do |ms_artist|
+
+#artist_list = @sequel.artist_repo.get_all
+
+artist_names = File.open(switch_value("artists-file"), 'r') {|f| f.readlines }
+artist_list = artist_names.
+  map {|name| @sequel.artist_repo.get_by_property(:name, name.strip) }.
+  compact
+
+artist_list.each do |ms_artist|
 
   title = ms_artist.name
 
