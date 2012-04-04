@@ -16,17 +16,6 @@ def choice_prompt(message, choices=['y', 'n'])
   answer
 end
 
-def upload_file(filename)
-  File.open(filename, 'r') do |file|
-    ci_file = CI::File.new
-    ci_file.mime_type = 'image/jpeg'
-    ci_file.content = file.read
-    ci_file.store!
-    ci_file
-  end
-end
-
-
 def set_artist_image(params)
   Dir.chdir(File.expand_path('~/Projects/msp')) do
     cmd = "bin/msp script ../msp-ops-scripts/ingestion/upload_one_off_image.rb '#{params.to_json}'"
@@ -46,21 +35,8 @@ end
 
 require 'rubygems'
 
-require 'ci-api'
-CI::MediaFileServer.configure(
-'api@mediaserviceprovider.com', 'chom77gup',
-:host         => 'msp.api.cissme.com',
-:port         => 80,
-:protocol     => :http,
-:base_path    => '/',
-:logger       => nil,
-:open_timeout => 60,
-:read_timeout => 60
-)
-
 
 require 'pp'
-require 'ci-api'
 require 'music_story'
 xml_file = File.expand_path('~/raid/20120402/music-story-data-archambault-10GH31-2012-04-02-45-01.xml')
 
