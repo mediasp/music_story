@@ -51,10 +51,11 @@ CI::MediaFileServer.configure(
 
 
 require 'pp'
+require 'ci-api'
 require 'music_story'
-xml_file = '/home/nick/raid/20120402/music-story-data-archambault-10GH31-2012-04-02-45-01.xml'
+xml_file = File.expand_path('~/raid/20120402/music-story-data-archambault-10GH31-2012-04-02-45-01.xml')
 
-@xml_dir = '/home/nick/raid/20120402'
+@xml_dir = File.expand_path '~/raid/20120402'
 
 sqlite = false
 
