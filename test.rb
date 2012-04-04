@@ -27,37 +27,35 @@ def upload_file(filename)
 end
 
 
-def image_metadata_params ci_file_id
-  {
-    :created_at => now_utc,
-    :updated_at => now_utc,
-    :type       => 'MSP::File::Image',
-    :ci_file_id => ci_file_id,
-    :mime_type => 'image/jpeg'
-  }
+def set_artist_image(params)
+  Dir.chdir(File.expand_path('~/Projects/msp')) do
+    cmd = "bin/msp script ../msp-ops-scripts/ingestion/upload_one_off_image.rb '#{params.to_json}'"
+    $stderr.puts cmd
+    $stderr.puts `#{cmd}`
+  end
 end
 
 # FIXME use optparse, lol
 def has_switch(switch_name)
-  ! @switches.select {|a| a.index(switch_name) == 2 }.empty?
+! @switches.select {|a| a.index(switch_name) == 2 }.empty?
 end
 
 def xml_files
-  [*switch_value("xml-file") || Dir[@xml_dir + "/*.xml"]]
+[*switch_value("xml-file") || Dir[@xml_dir + "/*.xml"]]
 end
 
 require 'rubygems'
 
 require 'ci-api'
 CI::MediaFileServer.configure(
-  'api@mediaserviceprovider.com', 'chom77gup',
-  :host         => 'msp.api.cissme.com',
-  :port         => 80,
-  :protocol     => :http,
-  :base_path    => '/',
-  :logger       => nil,
-  :open_timeout => 60,
-  :read_timeout => 60
+'api@mediaserviceprovider.com', 'chom77gup',
+:host         => 'msp.api.cissme.com',
+:port         => 80,
+:protocol     => :http,
+:base_path    => '/',
+:logger       => nil,
+:open_timeout => 60,
+:read_timeout => 60
 )
 
 
@@ -71,46 +69,46 @@ xml_file = File.expand_path('~/raid/20120402/music-story-data-archambault-10GH31
 sqlite = false
 
 if sqlite
-  db_file = switch_value("db") || "music_story.db"
-  $stderr.puts("using db file #{db_file}")
-  @db = Sequel.sqlite(db_file)
+db_file = switch_value("db") || "music_story.db"
+$stderr.puts("using db file #{db_file}")
+@db = Sequel.sqlite(db_file)
 else
-  @db = Sequel.connect("mysql://msp:msp@gomorrah/music_story", :encoding => 'utf8')
+@db = Sequel.connect("mysql://msp:msp@gomorrah/music_story", :encoding => 'utf8')
 end
 
 @sequel = MusicStory::Repository::Sequel.new(@db)
 
 def import_db
-  @sequel.create_tables!
+@sequel.create_tables!
 
-  $stderr.puts("Loading data from #@xml_dir:")
+$stderr.puts("Loading data from #@xml_dir:")
 
-  xml_files.each do |filename|
-    $stderr.puts("  #{filename}")
-    begin
-      MusicStory::Utils::XMLToDBImporter.import_file_into_db(filename, @db)
-    rescue => e
-      $stderr.puts("  ERROR: #{e}")
-      $stderr.puts("  xml import not complete")
-    end
+xml_files.each do |filename|
+  $stderr.puts("  #{filename}")
+  begin
+    MusicStory::Utils::XMLToDBImporter.import_file_into_db(filename, @db)
+  rescue => e
+    $stderr.puts("  ERROR: #{e}")
+    $stderr.puts("  xml import not complete")
   end
+end
 end
 
 if sqlite
-  if ! File.exists?(db_file)
-    $stderr.puts("importing db to #{db_file}")
-    import_db
-    # FIXME nuke does not work with mysql
-  elsif has_switch("nuke")
-    $stderr.puts("nuking #{db_file}")
-    `rm #{db_file}`
-    import_db
-  end
+if ! File.exists?(db_file)
+  $stderr.puts("importing db to #{db_file}")
+  import_db
+  # FIXME nuke does not work with mysql
+elsif has_switch("nuke")
+  $stderr.puts("nuking #{db_file}")
+  `rm #{db_file}`
+  import_db
+end
 else
-  if has_switch("nuke")
-    @sequel.drop_tables!
-    import_db
-  end
+if has_switch("nuke")
+  @sequel.drop_tables!
+  import_db
+end
 end
 
 msp_db = Sequel.connect(switch_value("msp-database"), :encoding => 'utf8')
@@ -129,23 +127,16 @@ end
 
   found = msp_db[:artists].filter(:title => /#{title}/i).all
 
-  selected = found.find do |artist_blob|
+  msp_artist = found.find do |artist_blob|
     $stderr.puts("  #{artist_blob.inspect}")
-    choice_prompt("Select msp artist?") == 'y'
+    found.size == 1 or choice_prompt("Select msp artist?") == 'y'
   end
 
-  if ! selected
-    stderr.puts("no artist selected.")
-    exit 1
+  if ! msp_artist
+    $stderr.puts("no MSP artist msp_artist.")
+    next
   end
 
-
-  if ms_artist
-    $stderr.puts("found #{ms_artist.name} in music story")
-  else
-    $stderr.puts("no artist #{title} found in music story")
-    exit 1
-  end
 
   CONSTANT_DESCRIPTION_VALUES = {
     :lang_code => "fr",
@@ -156,7 +147,7 @@ end
 
   }
 
-  $stderr.puts("Adding description for artist id:#{selected[:id]} - #{selected[:title]}")
+  $stderr.puts("Adding description for artist id:#{msp_artist[:id]} - #{msp_artist[:title]}")
 
   artist_text_type, artist_text_body = [:plain_text_bio, :plain_text_summary].
   map {|prop| [prop, ms_artist.send(prop)] }.
@@ -164,13 +155,13 @@ end
 
   if artist_text_body.nil?
     $stderr.puts("No description for music story artist, sad times")
-    exit 1
+    next
   end
 
   def now_utc ; Time.now.utc ; end
 
   description_values = {
-    :base_id => selected[:id],
+    :base_id => msp_artist[:id],
     :updated_at => now_utc,
     :created_at => now_utc,
     :body => artist_text_body,
@@ -183,7 +174,7 @@ end
 
   if choice_prompt("Confirm insert?") == 'n'
     $stderr.puts("quitting on user instruction")
-    exit 1
+    next
   end
 
   img_dir = switch_value("img-dir")
@@ -201,27 +192,29 @@ end
     msp_db[:descriptions].insert(description_values)
   end
 
-  if selected[:primary_image_id].nil?
-    if ! ms_artist.image_filename.nil?
-      image_file = File.join(File.expand_path(img_dir), ms_artist.image_filename)
+  if ! ms_artist.image_filename.nil?
+    image_file = File.join(File.expand_path(img_dir), ms_artist.image_filename)
 
-      if ! File.exists?(image_file)
-        $stderr.puts("no image file called: #{image_file}")
-      else
-        $stderr.puts("using image file #{image_file}")
-        ci_file = upload_file(image_file)
-        $stderr.puts("uploaded to ci as #{ci_file.inspect}")
-
-        $stderr.puts("updating image metadata in msp_db")
-        msp_file_p = image_metadata_params(ci_file.id)
-        msp_db[:files].insert(msp_file_p)
-
-      end
+    if ! File.exists?(image_file)
+      $stderr.puts("no image file called: #{image_file}")
     else
-      $stderr.puts("no image define for #{ms_artist.name}")
+      $stderr.puts("using image file #{image_file}")
+      image_params = {
+        "source_data"      => {
+          "source_id"       => ms_artist.id,
+          "source_type"     => "music_story",
+          "licensor_id"     => music_story_licensor[:id]
+        },
+        "credits"         => "Music Story",
+        "mime_type"      => "image/jpeg",
+        "image_filename" => image_file,
+        "artist_id"      => msp_artist[:id]
+      }
+      $stderr.puts "Replacing artist image #{msp_artist[:primary_image_id]} of artist: #{msp_artist[:id]}"
+      set_artist_image(image_params)
+
     end
   else
-
-    $stderr.puts "Image already exists!"
+    $stderr.puts("no image define for #{ms_artist.name}")
   end
 end
