@@ -37,6 +37,8 @@ def has_switch(switch_name)
 ! @switches.select {|a| a.index(switch_name) == 2 }.empty?
 end
 
+@force = has_switch('non-interactive')
+
 def xml_files
 [*switch_value("xml-file") || Dir[@xml_dir + "/*.xml"]]
 end
@@ -118,7 +120,7 @@ artist_list.each do |ms_artist|
 
   msp_artist = found.find do |artist_blob|
     $stderr.puts("  #{artist_blob.inspect}")
-    found.size == 1 or choice_prompt("Select msp artist?") == 'y'
+    found.size == 1 or @force or choice_prompt("Select msp artist?") == 'y'
   end
 
   if ! msp_artist
@@ -163,7 +165,7 @@ artist_list.each do |ms_artist|
     $stderr.puts("Confirm insert:")
     pp description_values
 
-    if choice_prompt("Confirm insert?") == 'n'
+    if !@force && (choice_prompt("Confirm insert?") == 'n')
       $stderr.puts("quitting on user instruction")
       next
     end
