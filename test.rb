@@ -142,8 +142,11 @@ artist_list.each do |ms_artist|
 
 
   artist_text_type, artist_text_body = [:plain_text_bio, :plain_text_summary].
-  map {|prop| [prop, ms_artist.send(prop)] }.
-  find {|prop, text| ! text.nil? }
+    map {|prop| [prop, ms_artist.send(prop)] }.
+    find {|prop, text| ! text.nil? }
+
+  artist_text_body = artist_text_body.
+    gsub("\\n", "\n").gsub("\\", "")
 
   if artist_text_body.nil?
     $stderr.puts("No description for music story artist, sad times")
@@ -152,7 +155,7 @@ artist_list.each do |ms_artist|
       :base_id => msp_artist[:id],
       :updated_at => now_utc,
       :created_at => now_utc,
-      :body => artist_text_body.gsub("\\",''), # Remove double escaped vals
+      :body => artist_text_body, # Remove double escaped vals
       #:source_property_type => artist_text_type.to_s,
       :source_property_id   => ms_artist.id,
     }.merge(CONSTANT_DESCRIPTION_VALUES)
