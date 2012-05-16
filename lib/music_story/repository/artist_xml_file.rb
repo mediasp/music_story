@@ -41,15 +41,21 @@ module MusicStory
         next unless node.name == 'artiste' && node.node_type == Nokogiri::XML::Reader::TYPE_ELEMENT
         doc = Nokogiri::XML(node.outer_xml)
 
+        # extract genres
         genres = Hash.new {|h,k| h[k]=[]}
-        doc.xpath('//artiste/genres/genre').map do |node|
+        genres_and_relation = doc.xpath('//artiste/genres/genre').map do |node|
           genre = Model::Genre.new(
             :id   => node.attr('id').to_i,
             :name => node.inner_text.strip
           )
-          genres[ARTIST_GENRE_RELATIONS[node.attr('relation').to_i]] << genre
+          [genre, ARTIST_GENRE_RELATIONS[node.attr('relation').to_i]]
         end
 
+        genres_and_relation.uniq.each do |genre, relation|
+          genres[relation] << genre
+        end
+
+        # extract associations
         associations = Hash.new {|h,k| h[k]=[]}
         associated_artists_and_type = doc.xpath('//artiste/associes/associe').map do |node|
           artist = Model::Artist.new({

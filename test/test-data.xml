@@ -24,6 +24,11 @@
         <genre id="28" relation="3">Musique classique</genre>
         <genre id="29" relation="1">Rive gauche</genre>
         <genre id="42" relation="3">Yéyé</genre>
+        <!--
+          we have found dupes in the music story data in the past, so throw one in
+          the test data to show we are smarter than music story
+        -->
+        <genre id="71" relation="1">Pop française</genre>
         <genre id="71" relation="1">Pop française</genre>
         <genre id="151" relation="3">Musiques du monde</genre>
         <genre id="72" relation="1">Rock français</genre>
