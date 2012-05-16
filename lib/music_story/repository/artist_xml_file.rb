@@ -51,12 +51,16 @@ module MusicStory
         end
 
         associations = Hash.new {|h,k| h[k]=[]}
-        doc.xpath('//artiste/associes/associe').map do |node|
+        associated_artists_and_type = doc.xpath('//artiste/associes/associe').map do |node|
           artist = Model::Artist.new({
             :id => node.attr('id_associe').to_i,
             :name => node.attr('nom_associe')
           })
-          associations[ASSOCIATION_TYPES[node.inner_text]] << artist
+          [artist, ASSOCIATION_TYPES[node.inner_text]]
+        end
+
+        associated_artists_and_type.uniq.each do |artist, type|
+          associations[type] << artist
         end
 
         yield Model::Artist.new({

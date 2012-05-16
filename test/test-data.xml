@@ -32,6 +32,11 @@
       </genres>
       <associes>
         <associe id_artiste="42" id_associe="176" nom_associe="Boris Vian">I</associe>
+        <!--
+          we have found dupes in the music story data in the past, so throw one in
+          the test data to show we are smarter than music story
+        -->
+        <associe id_artiste="42" id_associe="176" nom_associe="Boris Vian">I</associe>
         <associe id_artiste="42" id_associe="806" nom_associe="Alain Bashung">S</associe>
         <associe id_artiste="42" id_associe="746" nom_associe="Fréhel">I</associe>
         <associe id_artiste="42" id_associe="1777" nom_associe="Arthur H">S</associe>
