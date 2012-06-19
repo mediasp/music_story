@@ -45,10 +45,10 @@ module MusicStory
         genres = Hash.new {|h,k| h[k]=[]}
         genres_and_relation = doc.xpath('//artiste/genres/genre').map do |node|
           genre = Model::Genre.new(
-            :id   => node.attr('id').to_i,
+            :id   => to_i_or_nil(node.attr('id')),
             :name => node.inner_text.strip
           )
-          [genre, ARTIST_GENRE_RELATIONS[node.attr('relation').to_i]]
+          [genre, ARTIST_GENRE_RELATIONS[to_i_or_nil(node.attr('relation'))]]
         end
 
         genres_and_relation.uniq.each do |genre, relation|
@@ -59,18 +59,18 @@ module MusicStory
         associations = Hash.new {|h,k| h[k]=[]}
         associated_artists_and_type = doc.xpath('//artiste/associes/associe').map do |node|
           artist = Model::Artist.new({
-            :id => node.attr('id_associe').to_i,
+            :id => to_i_or_nil(node.attr('id_associe')),
             :name => node.attr('nom_associe')
           })
           [artist, ASSOCIATION_TYPES[node.inner_text]]
         end
 
         associated_artists_and_type.uniq.each do |artist, type|
-          associations[type] << artist
+          associations[type] << artist unless invalid_artist?(artist)
         end
 
         yield Model::Artist.new({
-          :id        => doc.xpath('//artiste').attr('id').value.to_i,
+          :id        => to_i_or_nil(doc.xpath('//artiste').attr('id').value),
           :name      => doc.xpath('//artiste/nom').inner_text,
           :forename  => unless_empty(doc.xpath('//artiste/prenom').inner_text),
           :real_name => unless_empty(doc.xpath('//artiste/nom_reel').inner_text),
@@ -97,6 +97,16 @@ module MusicStory
     def unless_empty(string)
       string = string.strip
       string unless string.empty?
+    end
+
+    # basic check that core artist properties are there and correct
+    def invalid_artist?(artist)
+      artist.name.nil? || artist.name.strip.empty? ||
+        artist.id.nil? || /[0-9]+/.match(artist.id.to_s).nil?
+    end
+
+    def to_i_or_nil(value)
+      /[0-9]+/.match(value.to_s) && value.to_i
     end
   end
 end

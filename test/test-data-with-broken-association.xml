@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items>
+  <date>2012-01-16</date>
+  <artistes>
+    <artiste id="42">
+      <nom>Serge Gainsbourg</nom>
+      <prenom>Serge</prenom>
+      <nom_reel>Lucien Ginsburg</nom_reel>
+      <role>Compositeur</role>
+      <type>artiste</type>
+      <pays>France</pays>
+      <resume>Awesome</resume>
+      <texte_bio>Great!</texte_bio>
+
+      <genres>
+        <genre id="5" relation="2">Pop</genre>
+      </genres>
+      <associes>
+        <!-- none of these will work -->
+        <associe id_artiste="42">I</associe>
+        <associe id_associe="806">S</associe>
+        <associe nom_associe="Little Richard">A</associe>
+        <associe id_artiste="42" id_associe="746" nom_associe="Fréhel">I</associe>
+        <associe id_artiste="42" nom_associe="Léo Ferré">A</associe>
+        <associe id_artiste="42" id_associe="1422">S</associe>
+
+        <!-- only these two are valid -->
+        <associe id_artiste="42" id_associe="1777" nom_associe="Arthur H">S</associe>
+        <associe id_associe="1218" nom_associe="Benjamin Biolay">A</associe>
+      </associes>
+    </artiste>
+  </artistes>
+</items>
