@@ -66,6 +66,7 @@ module MusicStory
         end
 
         associated_artists_and_type.uniq.each do |artist, type|
+          # FIXME track non-failing errors, rather than keeping quiet about it
           associations[type] << artist unless invalid_artist?(artist)
         end
 
