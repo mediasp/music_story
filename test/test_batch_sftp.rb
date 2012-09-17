@@ -42,7 +42,7 @@ class MockSFTPSession
     raise 'options not supported' unless options == {:recursive => true}
 
     local_remote_dir = File.join(@dir, remote_dir)
-    FileUtils.cp_r(local_remote_dir, local_dir)
+    FileUtils.cp_r(Dir.glob(local_remote_dir + '/*'), local_dir)
   end
 end
 
@@ -363,7 +363,8 @@ describe "MusicStory::Repository::BatchSFTP" do
         session.download(batch, out_dir)
 
         files_in_tree.each do |file|
-          looking_for = file.split("/")[1..-1].join('/')
+          # the first two parts of the path get dropped
+          looking_for = file.split("/")[2..-1].join('/')
           assert File.exists?(File.join(out_dir, looking_for)), looking_for
         end
       end

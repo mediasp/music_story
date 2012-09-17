@@ -98,6 +98,7 @@ module MusicStory
 
     # download a batch.  Should work for a batch in any state
     def download(w, batch, local_dir)
+      @logger.info("Downloading #{batch.path} to #{local_dir}...")
       w.sftp.download!(batch.path, local_dir, :recursive => true)
     end
 
