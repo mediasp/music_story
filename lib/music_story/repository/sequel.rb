@@ -13,7 +13,7 @@ module MusicStory
       end
     end
 
-    attr_reader :artist_repo, :genre_repo
+    attr_reader :artist_repo, :genre_repo, :db
 
     def drop_tables!
       [:genres, :artist_associations, :artist_genres, :artists].each do |table|

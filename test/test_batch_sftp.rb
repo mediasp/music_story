@@ -4,6 +4,7 @@ require 'tempfile'
 require 'fileutils'
 require 'music_story/repository/batch_sftp'
 
+# Net::SFTP::Session like interface on top of local file system location
 class MockSFTPSession
 
   class MockEntry

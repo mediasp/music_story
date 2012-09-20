@@ -30,9 +30,9 @@ module MusicStory
     end
 
     # start talking to the remote server, yielding the session to the block,
-    # which is closed after the block finishes executing
-    # you are yielded a wrapper object that lets you use the access methods in
-    # the repository, minus the first argument, for instance:
+    # which is closed after the block finishes executing.
+    # The block is yielded a wrapper object that lets you use the access methods
+    # in the repository, minus the first argument, for instance:
     #    repo.connect do |session|
     #      batch = session.new_batches.first
     #      session.download(batch, '/tmp/dir')
@@ -80,12 +80,13 @@ module MusicStory
     # return a list of all the batches on the sftp site that are ready to
     # be downloaded or we can start processing them
     def new_batches(w)
+      @logger.debug("Looking for new batches in remote dir '#@basedir' with pattern #@batch_pattern")
       complete_dirs = w.sftp.dir[@basedir, @batch_pattern].select do |entry|
         w.sftp.dir[join(@basedir, entry.name), DELIVERY_COMPLETE].any?.tap do |f|
           if f
-            @logger.debug("Found new batch: #{entry.name}")
+            @logger.debug("  Found new batch: #{entry.name}")
           else
-            @logger.debug("Incomplete batch: #{entry.name}")
+            @logger.debug("  Incomplete batch: #{entry.name}")
           end
         end
       end
