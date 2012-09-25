@@ -4,6 +4,9 @@ module MusicStory
   module Utils; end
 end
 
+# alias it
+Musicstory = MusicStory
+
 require 'nokogiri'
 require 'music_story/utils/html_to_text'
 require 'music_story/utils/xml_to_db_importer'

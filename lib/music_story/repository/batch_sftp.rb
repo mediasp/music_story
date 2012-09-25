@@ -38,9 +38,12 @@ module MusicStory
     #      session.download(batch, '/tmp/dir')
     #    end
     def connect(&block)
+      return_result = nil
+      # the sftp.start method does not seem to return the last thing you execute
       start_sftp_session do |sftp_session|
-        yield SessionWrapper.new(self, sftp_session)
+        return_result = yield SessionWrapper.new(self, sftp_session)
       end
+      return_result
     end
 
     def start_sftp_session(&block)
@@ -100,7 +103,18 @@ module MusicStory
     # download a batch.  Should work for a batch in any state
     def download(w, batch, local_dir)
       @logger.info("Downloading #{batch.path} to #{local_dir}...")
-      w.sftp.download!(batch.path, local_dir, :recursive => true)
+      w.sftp.download!(batch.path, local_dir, :recursive => true) do |event, downloader, *args|
+        case event
+        when :open then
+          # args[0] : file metadata
+          @logger.debug "Starting download: #{args[0].remote} -> #{args[0].local} (#{args[0].size}) bytes"
+        when :close then
+          # args[0] : file metadata
+          @logger.debug "Finished download: #{args[0].remote}"
+        when :finish then
+          @logger.debug "Download complete"
+        end
+      end
     end
 
     # return true if there are any batches available
