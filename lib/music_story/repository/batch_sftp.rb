@@ -126,6 +126,8 @@ module MusicStory
     # fs
     def mark_processing(w, batch)
       new_name = join(@basedir, DIR_PROCESSING, File.basename(batch.path))
+      @logger.info("Marking #{batch} as processing")
+      @logger.debug("  moving #{batch.path} to #{new_name}")
       w.sftp.rename(batch.path, new_name, RENAME_NATIVE)
       batch.path = new_name
       batch.state = :processing
@@ -136,6 +138,8 @@ module MusicStory
     def mark_processed(w, batch, path_to_logfile=nil)
       batch_basename = File.basename(batch.path)
       new_name = join(@basedir, DIR_PROCESSED, batch_basename)
+      @logger.info("Marking #{batch} as processed")
+      @logger.debug("  moving #{batch.path} to #{new_name}")
       w.sftp.rename(batch.path, new_name, RENAME_NATIVE)
       batch.path = new_name
       batch.state = :processed
