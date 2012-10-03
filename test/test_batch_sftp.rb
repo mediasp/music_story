@@ -233,6 +233,22 @@ describe "MusicStory::Repository::BatchSFTP" do
       assert_equal '/music-story-data-2010-01-01', batch.path
       assert_equal :new, batch.state
     end
+
+    it "doesn't get confused by log files floating in the root directory (MSP#1907)" do
+      # pending being able to get this to fail without the fix - needs better
+      # mock or to be tested against a real sftp site'
+      tree [
+        'music-story-data-2010-01-01.log',
+        'processed/music-story-data-2010-01-01/',
+        'music-story-data-2010-02-01/',
+        'music-story-data-2010-02-01/delivery.complete'
+      ]
+
+      batch = session.new_batches.first
+      assert batch
+      assert_equal '/music-story-data-2010-02-01', batch.path
+      assert_equal :new, batch.state
+    end
   end
 
   describe "#mark_processing" do

@@ -85,6 +85,8 @@ module MusicStory
     def new_batches(w)
       @logger.debug("Looking for new batches in remote dir '#@basedir' with pattern #@batch_pattern")
       complete_dirs = w.sftp.dir[@basedir, @batch_pattern].select do |entry|
+        next if /\.log$/.match(entry.name) # skip log files (MSP#1915)
+
         w.sftp.dir[join(@basedir, entry.name), DELIVERY_COMPLETE].any?.tap do |f|
           if f
             @logger.debug("  Found new batch: #{entry.name}")
