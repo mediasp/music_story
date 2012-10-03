@@ -3,56 +3,14 @@ require 'tmpdir'
 require 'tempfile'
 require 'fileutils'
 require 'music_story/repository/batch_sftp'
-
-# Net::SFTP::Session like interface on top of local file system location
-class MockSFTPSession
-
-  class MockEntry
-    attr_reader :name
-    def initialize(props)
-      @name = props[:name]
-    end
-  end
-
-  class MockDir
-    def initialize(dir) ; @dir = dir ; end
-
-    def [](base, pattern)
-      Dir[File.join(@dir, base, pattern)].map do |p|
-        MockEntry.new(:name => File.basename(p))
-      end
-    end
-  end
-
-  def initialize(dir) ; @dir = dir        ; end
-  def dir             ; MockDir.new(@dir) ; end
-
-  def upload!(local_path, remote_path)
-    local_remote_path = File.join(@dir, remote_path)
-    FileUtils.cp(local_path, local_remote_path)
-    nil
-  end
-
-  def rename(src, dest, flags_ignored)
-    local_src = File.join(@dir, src)
-    local_dest = File.join(@dir, dest)
-    FileUtils.mv(local_src, local_dest)
-  end
-
-  def download!(remote_dir, local_dir, options={})
-    raise 'options not supported' unless options == {:recursive => true}
-
-    local_remote_dir = File.join(@dir, remote_dir)
-    FileUtils.cp_r(Dir.glob(local_remote_dir + '/*'), local_dir)
-  end
-end
+require 'mock_sftp'
 
 describe "MusicStory::Repository::BatchSFTP" do
   include FileUtils
 
   before do
     @tempdir = Dir.mktmpdir
-    mock_sftp_session = MockSFTPSession.new(@tempdir)
+    mock_sftp_session = MockSFTP::Session.new(@tempdir)
     repository =  MusicStory::Repository::BatchSFTP.new('host', 'user')
     @session = MusicStory::Repository::BatchSFTP::SessionWrapper.
       new(repository, mock_sftp_session)

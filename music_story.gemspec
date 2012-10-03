@@ -20,6 +20,7 @@ spec = Gem::Specification.new do |s|
 
   s.add_development_dependency("minitest")
   s.add_development_dependency("sqlite3")
+  s.add_development_dependency("mock_sftp")
 
   s.files = Dir.glob("lib/**/*") + ['README.txt']
 end
