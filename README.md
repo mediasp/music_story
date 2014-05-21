@@ -17,3 +17,12 @@ end
 ```
 
 Should be able to cope with big XML files, as it uses an XML::Reader to scan through the file one artist at a time; only the current artist object is kept in memory. (Although only tried it on a 330KB file so far so YMMV...)
+
+## License
+
+Released under the MIT license.
+
+## Version Notes.
+### 2.0.0
+  * requires at least ruby 1.9.3
+  * changed the gem requirement from our local 'persistence' gem to the 'hold' gem available on rubygems.
