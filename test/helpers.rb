@@ -1,3 +1,5 @@
+# encoding: UTF-8
+
 require 'rubygems'
 require 'music_story'
 
@@ -10,7 +12,7 @@ module MusicStory::TestHelpers
   def test_xml_filename
     File.join(File.dirname(__FILE__), 'test-data.xml')
   end
-  
+
   def assert_artist_correct_from_test_xml_file(artist)
     assert_kind_of MusicStory::Model::Artist, artist
     assert_equal 42, artist.id
