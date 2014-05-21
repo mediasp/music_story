@@ -1,3 +1,5 @@
+require 'helpers'
+
 describe 'MusicStory::Model::Batch' do
   describe '#date' do
     it 'returns nil if there is no date found in the path' do
