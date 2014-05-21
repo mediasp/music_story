@@ -20,7 +20,9 @@ spec = Gem::Specification.new do |s|
   s.add_dependency('nokogiri', '>= 1.5.0')
   s.add_dependency('net-sftp')
 
+  s.add_development_dependency('rake')
   s.add_development_dependency('minitest')
+  s.add_development_dependency('minitest-spec')
   s.add_development_dependency('sqlite3')
   s.add_development_dependency('mock_sftp')
 
